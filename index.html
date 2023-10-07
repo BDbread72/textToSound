@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Sound</title>
+    <style>
+        body{
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* 인터넷익스플로러 */
+            user-select: none;
+        }
+    </style>
+</head>
+<body style="background-color: black; color: #00ff00;">
+    <div>
+        <label><input id="s1" type="checkbox" checked>Query-Select Enable</label>
+        <label><input id="s2" type="checkbox">SVS<span style="color: aqua; font-size: small;">(String Value Square)</span></label>
+        <label><input id="s3" type="checkbox"><span style="color: aqua;">Levitation</span></label><br><span style="font-family: Arial; color: white;">Readme.md를 읽어 주세요.</span>
+    </div>
+    <div>
+        <label>GAMMA <input id="gamma" style="background-color: black; color: #00ff00; outline: none; border-color: #00ee00;" type="range" min="0" max="10" value="0"></label><output id="gamma_value">0</output>
+    </div>
+    <div>
+        <textarea style="resize: none; width: 50%; height:60px;" id="txt"></textarea><br>
+        <button id="generate">Generate</button>
+    </div>
+
+    <script>
+        var context = new AudioContext()
+        var o = null
+        var g = null
+        function wait(seconds) {
+        return new Promise(resolve => {
+            setTimeout(resolve, seconds * 1000);
+        });
+        }
+        function stopSound(){
+            console.log('멈춤')
+            g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.04)
+        }
+        function playSound(frc,callback) {
+            console.log(frc,'재생')
+            o = context.createOscillator()
+            g = context.createGain()
+            o.connect(g)
+            o.frequency.value = frc
+            g.connect(context.destination)
+            o.start(0)
+            wait(1).then(() => {
+                stopSound()
+                callback()
+            })
+        }
+        
+        function convertToUnicodeList(text) {
+  const unicodeList = [];
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charAt(i);
+    const unicode = text.charCodeAt(i);
+    
+    // 유니코드 값을 100부터 300 사이의 값으로 고정
+    const fixedUnicode = (unicode % 201) + 100;
+    
+    unicodeList.push(fixedUnicode);
+  }
+  
+  return unicodeList;
+}
+
+        function TEST(text){
+            let index=0;
+            const list = convertToUnicodeList(text)
+            function playNext(){
+                if(index >= list.length){
+                    return
+                }
+                playSound(list[index],playNext)
+                index++
+            }
+            playNext()
+        }
+        const gamma = document.getElementById("gamma")
+        gamma.addEventListener("input", (event) => {
+            document.getElementById("gamma_value").textContent = event.target.value;
+        })
+        const generate = document.getElementById("generate")
+        generate.addEventListener("click", () => {
+            TEST(document.getElementById('txt').value)
+            console.log(document.getElementById('txt').value)
+        })
+    </script>
+</body>
+</html>
